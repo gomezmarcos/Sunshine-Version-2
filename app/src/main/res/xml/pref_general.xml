@@ -5,5 +5,22 @@
         android:defaultValue="1824,ar"
         android:title="@string/location_title" />
 
+    <ListPreference
+        android:key="unit"
+        android:title="@string/messure_unit_title"
+        android:defaultValue="metric"
+        android:entries="@array/messure_units"
+        android:entryValues="@array/messure_units_value"
+
+        />
+
+    <EditTextPreference
+        android:key="latlon"
+        android:title="@string/mapa"/>
+
+
+
+
+
 
 </PreferenceScreen>

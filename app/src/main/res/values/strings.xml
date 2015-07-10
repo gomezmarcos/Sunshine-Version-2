@@ -5,9 +5,22 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="actions_refresh">refresh</string>
-    <string name="actions_help">ayyuda</string>
+    <string name="actions_help">Ayuda</string>
     <string name="title_activity_detail">DetailActivity</string>
     <string name="configuration">Configuracion</string>
     <string name="location_title">Titulo</string>
+    <string name="messure_unit_title">Unidad de medida</string>
+    <string name="mapa">Mapa</string>
+    <string name="pref_location_default">obelisco caba</string>
+    <string name="pref_location_key">latlon</string>
+    <string-array name="messure_units">
+        <item>metric</item>
+        <item>imperial</item>
+    </string-array>
+    <string-array name="messure_units_value">
+        <item>metric</item>
+        <item>imperial</item>
+    </string-array>
+
 
 </resources>

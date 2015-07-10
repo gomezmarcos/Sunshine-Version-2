@@ -45,22 +45,6 @@ public class ForecastFragment extends Fragment {
 
     public ArrayAdapter<String> adapter;
 
-    public void updateAdapter(String[] args) {
-        Gson gson = new Gson();
-        JSONArray jsonArray;
-        List<String> result = new ArrayList<>();
-
-        //TODO revisar
-
-        adapter=
-                new ArrayAdapter<String>(
-                        getActivity(),
-                        R.layout.list_item_forecast,
-                        R.id.list_item_forecast_textview,
-                        result);
-
-        adapter.notifyDataSetChanged();
-    }
 
     public ForecastFragment() { }
 
@@ -81,6 +65,12 @@ public class ForecastFragment extends Fragment {
         // For presentation, assume the user doesn't care about tenths of a degree.
         long roundedHigh = Math.round(high);
         long roundedLow = Math.round(low);
+
+        String unit = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString("unit","metric");
+        if (! unit.equals("metric")) {
+            roundedLow = roundedLow * 100;
+            roundedHigh = roundedHigh * 100;
+        }
 
         String highLowStr = roundedHigh + "/" + roundedLow;
         return highLowStr;
@@ -169,7 +159,7 @@ public class ForecastFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        List<String> items = getForecastList();
+        List<String> items = new ArrayList<>();
 
         //new FetchWeatherTask().execute("");
 
@@ -191,7 +181,7 @@ public class ForecastFragment extends Fragment {
                 Toast toast = Toast.makeText(getActivity(), String.format("weather clickeado %s", item), 10);
                 toast.show();
 
-                Intent intent = new Intent(getActivity(),DetailActivity.class);
+                Intent intent = new Intent(getActivity(), DetailActivity.class);
                 intent.putExtra("weather", item);
                 startActivity(intent);
 
@@ -220,31 +210,23 @@ public class ForecastFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            String q = defaultSharedPreferences.getString("location", "1844,ar");
-            Toast.makeText(getActivity(),q,5).show();
-            new FetchWeatherTask().execute(q);
-            return true;
+            return updateWeather();
         }
         return super.onOptionsItemSelected(item);
     }
 
-    private List<String> getForecastList() {
-        List<String> items = new ArrayList<String>();
-        items.add("Today - Sunny - 88/66");
-        items.add("Tomorrow - Sunny - 88/66");
-        items.add("Tomorrow - Sunny - 88/66");
-        items.add("Tomorrow - Snny - 88/66");
-        items.add("Sunday - Sunny - 50/22");
-        items.add("Monday - Rainy - 88/66");
-        items.add("Tuesday - Sunny - 88/66");
-        items.add("Sunday - Sunny - 50/22");
-        items.add("Monday - Rainy - 88/66");
-        items.add("Tuesday - Sunny - 88/66");
-        items.add("Sunday - Sunny - 50/22");
-        items.add("Monday - Rainy - 88/66");
-        items.add("Tuesday - Sunny - 88/66");
-        return items;
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+    private boolean updateWeather() {
+        SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String q = defaultSharedPreferences.getString("location", "1844,ar");
+        Toast.makeText(getActivity(), q, 5).show();
+        new FetchWeatherTask().execute(q);
+        return true;
     }
 
     public class FetchWeatherTask extends AsyncTask<String,Void, String[]> {
@@ -271,7 +253,8 @@ public class ForecastFragment extends Fragment {
             final String BASE_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
             String format = "json";
             String zip = strings[0];
-            String units = "metric";
+            String units = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString("unit", "metric");
+
             String nights = "7";
 
             String QUERY_PARAM = "q";
