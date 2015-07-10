@@ -1,8 +1,11 @@
 package com.example.android.sunshine.app;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -12,8 +15,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 
@@ -99,6 +104,7 @@ public class ForecastFragment extends Fragment {
         final String OWM_MIN = "min";
         final String OWM_DESCRIPTION = "main";
 
+
         JSONObject forecastJson = new JSONObject(forecastJsonStr);
         JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
 
@@ -167,7 +173,7 @@ public class ForecastFragment extends Fragment {
 
         //new FetchWeatherTask().execute("");
 
-        ArrayAdapter<String> adapter=
+        adapter =
                 new ArrayAdapter<String>(
                         getActivity(),
                         R.layout.list_item_forecast,
@@ -176,8 +182,21 @@ public class ForecastFragment extends Fragment {
 
         //View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-        ListView listView= (ListView) rootView.findViewById(R.id.listview_forecast);
+        final ListView listView= (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(adapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String item = (String) listView.getAdapter().getItem(position);
+                Toast toast = Toast.makeText(getActivity(), String.format("weather clickeado %s", item), 10);
+                toast.show();
+
+                Intent intent = new Intent(getActivity(),DetailActivity.class);
+                intent.putExtra("weather", item);
+                startActivity(intent);
+
+            }
+        });
 
 
         return rootView;
@@ -201,7 +220,10 @@ public class ForecastFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            new FetchWeatherTask().execute("9403");
+            SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String q = defaultSharedPreferences.getString("location", "1844,ar");
+            Toast.makeText(getActivity(),q,5).show();
+            new FetchWeatherTask().execute(q);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -212,15 +234,7 @@ public class ForecastFragment extends Fragment {
         items.add("Today - Sunny - 88/66");
         items.add("Tomorrow - Sunny - 88/66");
         items.add("Tomorrow - Sunny - 88/66");
-        items.add("Tomorrow - Sunny - 88/66");
-        items.add("Tomorrow - Sunny - 88/66");
-        items.add("Tomorrow - Sunny - 88/66");
-        items.add("Sunday - Sunny - 50/22");
-        items.add("Monday - Rainy - 88/66");
-        items.add("Tuesday - Sunny - 88/66");
-        items.add("Sunday - Sunny - 50/22");
-        items.add("Monday - Rainy - 88/66");
-        items.add("Tuesday - Sunny - 88/66");
+        items.add("Tomorrow - Snny - 88/66");
         items.add("Sunday - Sunny - 50/22");
         items.add("Monday - Rainy - 88/66");
         items.add("Tuesday - Sunny - 88/66");
