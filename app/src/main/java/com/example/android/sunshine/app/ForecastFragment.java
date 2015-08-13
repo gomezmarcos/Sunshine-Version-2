@@ -2,11 +2,15 @@ package com.example.android.sunshine.app;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.text.format.Time;
 import android.util.Log;
@@ -21,6 +25,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.example.android.sunshine.app.data.WeatherContract;
+import com.example.android.sunshine.app.data.WeatherProvider;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -41,10 +47,42 @@ import java.util.List;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class ForecastFragment extends Fragment {
+public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
     final String LOG_TAG = ForecastFragment.class.getSimpleName();
+    final static int WEATHER_LOADER_ID = 1001;
 
-    public ArrayAdapter<String> adapter;
+    //public ArrayAdapter<String> adapter;
+    private ForecastAdapter adapter;
+
+    private static final String[] FORECAST_COLUMNS = {
+            // In this case the id needs to be fully qualified with a table name, since
+            // the content provider joins the location & weather tables in the background
+            // (both have an _id column)
+            // On the one hand, that's annoying.  On the other, you can search the weather table
+            // using the location set by the user, which is only in the Location table.
+            // So the convenience is worth it.
+            WeatherContract.WeatherEntry.TABLE_NAME + "." + WeatherContract.WeatherEntry._ID,
+            WeatherContract.WeatherEntry.COLUMN_DATE,
+            WeatherContract.WeatherEntry.COLUMN_SHORT_DESC,
+            WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING,
+            WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,
+            WeatherContract.LocationEntry.COLUMN_COORD_LAT,
+            WeatherContract.LocationEntry.COLUMN_COORD_LONG
+    };
+
+    // These indices are tied to FORECAST_COLUMNS.  If FORECAST_COLUMNS changes, these
+    // must change.
+    static final int COL_WEATHER_ID = 0;
+    static final int COL_WEATHER_DATE = 1;
+    static final int COL_WEATHER_DESC = 2;
+    static final int COL_WEATHER_MAX_TEMP = 3;
+    static final int COL_WEATHER_MIN_TEMP = 4;
+    static final int COL_LOCATION_SETTING = 5;
+    static final int COL_WEATHER_CONDITION_ID = 6;
+    static final int COL_COORD_LAT = 7;
+    static final int COL_COORD_LONG = 8;
 
 
     public ForecastFragment() { }
@@ -164,31 +202,42 @@ public class ForecastFragment extends Fragment {
 
         //new FetchWeatherTask().execute("");
 
-        adapter =
+        /*adapter =
                 new ArrayAdapter<String>(
                         getActivity(),
                         R.layout.list_item_forecast,
                         R.id.list_item_forecast_textview,
                         items);
+                        */
 
-        //View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        String locationSettings = Utility.getPreferredLocation(getActivity());
+        String sort = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+        Uri uri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(locationSettings, System.currentTimeMillis());
+
+        Cursor cursor = getActivity().getContentResolver().query(uri, FORECAST_COLUMNS, null, null, sort);
+
+        adapter = new ForecastAdapter(getActivity(),cursor,0);
+
+        //Vihew rootView = inflater.inflate(R.layout.fragment_main, container, false);
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         final ListView listView= (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(adapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String item = (String) listView.getAdapter().getItem(position);
-                Toast toast = Toast.makeText(getActivity(), String.format("weather clickeado %s", item), 10);
-                toast.show();
+                Cursor c = (Cursor) parent.getItemAtPosition(position);
+                if (c != null){
+                    String preferredLocation = Utility.getPreferredLocation(getActivity());
+                    Intent intent = new Intent(getActivity(), DetailActivity.class);
+                    intent.setData(WeatherContract.WeatherEntry.buildWeatherLocationWithDate(preferredLocation,c.getLong(COL_WEATHER_DATE)));
+                    startActivity(intent);
 
-                Intent intent = new Intent(getActivity(), DetailActivity.class);
-                intent.putExtra("weather", item);
-                startActivity(intent);
+                }
 
             }
         });
-
 
         return rootView;
     }
@@ -211,7 +260,8 @@ public class ForecastFragment extends Fragment {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            return updateWeather();
+            updateWeather();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -222,14 +272,46 @@ public class ForecastFragment extends Fragment {
         updateWeather();
     }
 
-    private boolean updateWeather() {
-        SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+    private void updateWeather() {
+        /*SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String q = defaultSharedPreferences.getString("location", "1844,ar");
         Toast.makeText(getActivity(), q, 5).show();
+        */
+        FetchWeatherTask fetchWeatherTask1 = new FetchWeatherTask(getActivity());
+        String preferredLocation1 = Utility.getPreferredLocation(getActivity());
+        fetchWeatherTask1.execute(preferredLocation1);
 
-
-        new FetchWeatherTask(getActivity(),adapter).execute(q);
-        return true;
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        String preferredLocation = Utility.getPreferredLocation(getActivity());
+        String sort = WeatherContract.WeatherEntry.COLUMN_DATE + " ASC";
+        Uri uri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(preferredLocation, System.currentTimeMillis());
+
+        String[] projection = new String[]{};
+
+
+        CursorLoader cursorLoader = new CursorLoader(getActivity(),uri, null, null, null, sort);
+
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        adapter.swapCursor(data);
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        adapter.swapCursor(null);
+
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(WEATHER_LOADER_ID,null,this);
+        super.onActivityCreated(savedInstanceState);
+    }
 }

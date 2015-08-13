@@ -177,6 +177,7 @@ public class WeatherProvider extends ContentProvider {
         // Here's the switch statement that, given a URI, will determine what kind of request it is,
         // and query the database accordingly.
         Cursor retCursor;
+        int match = sUriMatcher.match(uri);
         switch (sUriMatcher.match(uri)) {
             // "weather/*/*"
             case WEATHER_WITH_LOCATION_AND_DATE:

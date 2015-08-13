@@ -56,12 +56,9 @@ public class MainActivity extends ActionBarActivity {
     }
 
     private void openPreferredLocationInMap(){
-        String location = PreferenceManager.getDefaultSharedPreferences(this).getString(
-                getString(R.string.pref_location_key),
-                getString(R.string.pref_location_default)
-        );
+        String preferredLocation = Utility.getPreferredLocation(this);
 
-        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon().appendQueryParameter("q", location).build();
+        Uri geoLocation = Uri.parse("geo:0,0?").buildUpon().appendQueryParameter("q", preferredLocation).build();
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(geoLocation);
 
@@ -69,7 +66,7 @@ public class MainActivity extends ActionBarActivity {
             startActivity(intent);
         }
         else {
-            Log.e(LOG_TAG, "Couldnt call " + location + ", no app");
+            Log.e(LOG_TAG, "Couldnt call " + preferredLocation + ", no app");
         }
 
 
