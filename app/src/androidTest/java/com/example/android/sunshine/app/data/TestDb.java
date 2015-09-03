@@ -15,7 +15,18 @@
  */
 package com.example.android.sunshine.app.data;
 
+import android.annotation.TargetApi;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.test.AndroidTestCase;
+
+import junit.framework.Assert;
+
+import java.util.HashSet;
+
+import static com.example.android.sunshine.app.data.WeatherContract.*;
 
 public class TestDb extends AndroidTestCase {
 
@@ -43,62 +54,62 @@ public class TestDb extends AndroidTestCase {
         Note that this only tests that the Location table has the correct columns, since we
         give you the code for the weather table.  This test does not look at the
      */
-//    public void testCreateDb() throws Throwable {
-//        // build a HashSet of all of the table names we wish to look for
-//        // Note that there will be another table in the DB that stores the
-//        // Android metadata (db version information)
-//        final HashSet<String> tableNameHashSet = new HashSet<String>();
-//        tableNameHashSet.add(WeatherContract.LocationEntry.TABLE_NAME);
-//        tableNameHashSet.add(WeatherContract.WeatherEntry.TABLE_NAME);
-//
-//        mContext.deleteDatabase(WeatherDbHelper.DATABASE_NAME);
-//        SQLiteDatabase db = new WeatherDbHelper(
-//                this.mContext).getWritableDatabase();
-//        assertEquals(true, db.isOpen());
-//
-//        // have we created the tables we want?
-//        Cursor c = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
-//
-//        assertTrue("Error: This means that the database has not been created correctly",
-//                c.moveToFirst());
-//
-//        // verify that the tables have been created
-//        do {
-//            tableNameHashSet.remove(c.getString(0));
-//        } while( c.moveToNext() );
-//
-//        // if this fails, it means that your database doesn't contain both the location entry
-//        // and weather entry tables
-//        assertTrue("Error: Your database was created without both the location entry and weather entry tables",
-//                tableNameHashSet.isEmpty());
-//
-//        // now, do our tables contain the correct columns?
-//        c = db.rawQuery("PRAGMA table_info(" + WeatherContract.LocationEntry.TABLE_NAME + ")",
-//                null);
-//
-//        assertTrue("Error: This means that we were unable to query the database for table information.",
-//                c.moveToFirst());
-//
-//        // Build a HashSet of all of the column names we want to look for
-//        final HashSet<String> locationColumnHashSet = new HashSet<String>();
-//        locationColumnHashSet.add(WeatherContract.LocationEntry._ID);
-//        locationColumnHashSet.add(WeatherContract.LocationEntry.COLUMN_CITY_NAME);
-//        locationColumnHashSet.add(WeatherContract.LocationEntry.COLUMN_COORD_LAT);
-//        locationColumnHashSet.add(WeatherContract.LocationEntry.COLUMN_COORD_LONG);
-//        locationColumnHashSet.add(WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING);
-//
-//        int columnNameIndex = c.getColumnIndex("name");
-//        do {
-//            String columnName = c.getString(columnNameIndex);
-//            locationColumnHashSet.remove(columnName);
-//        } while(c.moveToNext());
-//
-//        // if this fails, it means that your database doesn't contain all of the required location
-//        // entry columns
-//        assertTrue("Error: The database doesn't contain all of the required location entry columns",
-//                locationColumnHashSet.isEmpty());
-//        db.close();
-//    }
+    public void testCreateDb() throws Throwable {
+        // build a HashSet of all of the table names we wish to look for
+        // Note that there will be another table in the DB that stores the
+        // Android metadata (db version information)
+        final HashSet<String> tableNameHashSet = new HashSet<String>();
+        tableNameHashSet.add(LocationEntry.TABLE_NAME);
+        tableNameHashSet.add(WeatherEntry.TABLE_NAME);
+
+        mContext.deleteDatabase(WeatherDbHelper.DATABASE_NAME);
+        SQLiteDatabase db = new WeatherDbHelper(
+                this.mContext).getWritableDatabase();
+        assertEquals(true, db.isOpen());
+
+        // have we created the tables we want?
+        Cursor c = db.rawQuery("SELECT name FROM sqlite_master WHERE type='table'", null);
+
+        assertTrue("Error: This means that the database has not been created correctly",
+                c.moveToFirst());
+
+        // verify that the tables have been created
+        do {
+            tableNameHashSet.remove(c.getString(0));
+        } while( c.moveToNext() );
+
+        // if this fails, it means that your database doesn't contain both the location entry
+        // and weather entry tables
+        assertTrue("Error: Your database was created without both the location entry and weather entry tables",
+                tableNameHashSet.isEmpty());
+
+        // now, do our tables contain the correct columns?
+        c = db.rawQuery("PRAGMA table_info(" + LocationEntry.TABLE_NAME + ")",
+                null);
+
+        assertTrue("Error: This means that we were unable to query the database for table information.",
+                c.moveToFirst());
+
+        // Build a HashSet of all of the column names we want to look for
+        final HashSet<String> locationColumnHashSet = new HashSet<String>();
+        locationColumnHashSet.add(LocationEntry._ID);
+        locationColumnHashSet.add(LocationEntry.COLUMN_CITY_NAME);
+        locationColumnHashSet.add(LocationEntry.COLUMN_COORD_LAT);
+        locationColumnHashSet.add(LocationEntry.COLUMN_COORD_LONG);
+        locationColumnHashSet.add(LocationEntry.COLUMN_LOCATION_SETTING);
+
+        int columnNameIndex = c.getColumnIndex("name");
+        do {
+            String columnName = c.getString(columnNameIndex);
+            locationColumnHashSet.remove(columnName);
+        } while(c.moveToNext());
+
+        // if this fails, it means that your database doesn't contain all of the required location
+        // entry columns
+        assertTrue("Error: The database doesn't contain all of the required location entry columns",
+                locationColumnHashSet.isEmpty());
+        db.close();
+    }
 
     /*
         Students:  Here is where you will build code to test that we can insert and query the
@@ -106,23 +117,44 @@ public class TestDb extends AndroidTestCase {
         where you can uncomment out the "createNorthPoleLocationValues" function.  You can
         also make use of the ValidateCurrentRecord function from within TestUtilities.
     */
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public void testLocationTable() {
         // First step: Get reference to writable database
+        SQLiteDatabase db= new WeatherDbHelper(this.getContext()).getWritableDatabase();
 
         // Create ContentValues of what you want to insert
         // (you can use the createNorthPoleLocationValues if you wish)
+        String testLocationSetting = "99705";
+        String testCityName = "North Pole";
+        double testLatitude = 64.7488;
+        double testLongitude = -147.353;
+
+        ContentValues rowValues= new ContentValues();
+        rowValues.put(LocationEntry.COLUMN_CITY_NAME, testCityName);
+        rowValues.put(LocationEntry.COLUMN_LOCATION_SETTING, testLocationSetting);
+        rowValues.put(LocationEntry.COLUMN_COORD_LAT, testLatitude);
+        rowValues.put(LocationEntry.COLUMN_COORD_LONG, testLongitude);
 
         // Insert ContentValues into database and get a row ID back
+        long rowInserted = db.insert(LocationEntry.TABLE_NAME, null, rowValues);
+        assertTrue(rowInserted>0);
 
         // Query the database and receive a Cursor back
+        String[] columns = {LocationEntry.COLUMN_CITY_NAME, LocationEntry.COLUMN_LOCATION_SETTING};
+        String[] args = {testLocationSetting};
+        Cursor query = db.query(true, LocationEntry.TABLE_NAME, columns, LocationEntry.COLUMN_LOCATION_SETTING + "= ?", args, null, null, null, null, null);
 
         // Move the cursor to a valid database row
+        query.moveToFirst();
+        String locationSetting = query.getString(1);
 
         // Validate data in resulting Cursor with the original ContentValues
         // (you can use the validateCurrentRecord function in TestUtilities to validate the
         // query if you like)
+        assertEquals(testLocationSetting,locationSetting);
 
         // Finally, close the cursor and database
+        query.close();
 
     }
 
@@ -140,23 +172,41 @@ public class TestDb extends AndroidTestCase {
         // we can move this code to insertLocation and then call insertLocation from both
         // tests. Why move it? We need the code to return the ID of the inserted location
         // and our testLocationTable can only return void because it's a test.
+        long locationId = insertLocation();
 
         // First step: Get reference to writable database
+        SQLiteDatabase db = new WeatherDbHelper(getContext()).getWritableDatabase();
 
         // Create ContentValues of what you want to insert
         // (you can use the createWeatherValues TestUtilities function if you wish)
+        ContentValues weatherValues = TestUtilities.createWeatherValues(locationId);
 
         // Insert ContentValues into database and get a row ID back
+        long insertedRow = db.insert(WeatherEntry.TABLE_NAME,null,weatherValues);
+        assertTrue(insertedRow>0);
 
         // Query the database and receive a Cursor back
+        Cursor query = db.query(
+                WeatherEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
 
         // Move the cursor to a valid database row
+        assertTrue("Error: No Records returned from location query", query.moveToFirst());
+        query.moveToFirst();
 
         // Validate data in resulting Cursor with the original ContentValues
         // (you can use the validateCurrentRecord function in TestUtilities to validate the
         // query if you like)
+        TestUtilities.validateCurrentRecord("Ey! Algo no anda bien", query, weatherValues);
 
         // Finally, close the cursor and database
+        query.close();
+        db.close();
     }
 
 
@@ -165,7 +215,46 @@ public class TestDb extends AndroidTestCase {
         code from testLocationTable to here so that you can call this code from both
         testWeatherTable and testLocationTable.
      */
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public long insertLocation() {
-        return -1L;
+       // First step: Get reference to writable database
+        SQLiteDatabase db= new WeatherDbHelper(this.getContext()).getWritableDatabase();
+
+        // Create ContentValues of what you want to insert
+        // (you can use the createNorthPoleLocationValues if you wish)
+        String testLocationSetting = "99705";
+        String testCityName = "North Pole";
+        double testLatitude = 64.7488;
+        double testLongitude = -147.353;
+
+        ContentValues rowValues= new ContentValues();
+        rowValues.put(LocationEntry.COLUMN_CITY_NAME, testCityName);
+        rowValues.put(LocationEntry.COLUMN_LOCATION_SETTING, testLocationSetting);
+        rowValues.put(LocationEntry.COLUMN_COORD_LAT, testLatitude);
+        rowValues.put(LocationEntry.COLUMN_COORD_LONG, testLongitude);
+
+        // Insert ContentValues into database and get a row ID back
+        long rowInserted = db.insert(LocationEntry.TABLE_NAME, null, rowValues);
+        assertTrue(rowInserted>0);
+
+        // Query the database and receive a Cursor back
+        String[] columns = {LocationEntry._ID, LocationEntry.COLUMN_CITY_NAME, LocationEntry.COLUMN_LOCATION_SETTING};
+        String[] args = {testLocationSetting};
+        Cursor query = db.query(true, LocationEntry.TABLE_NAME, columns, LocationEntry.COLUMN_LOCATION_SETTING + "= ?", args, null, null, null, null, null);
+
+        // Move the cursor to a valid database row
+        query.moveToFirst();
+        String locationSetting = query.getString(2);
+        int _id = query.getInt(0);
+
+        // Validate data in resulting Cursor with the original ContentValues
+        // (you can use the validateCurrentRecord function in TestUtilities to validate the
+        // query if you like)
+        assertEquals(testLocationSetting, locationSetting);
+
+        // Finally, close the cursor and database
+        query.close();
+
+        return _id;
     }
 }
